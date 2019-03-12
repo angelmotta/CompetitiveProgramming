@@ -1,0 +1,31 @@
+#include <vector>
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <stack>
+#include <cmath>
+
+using namespace std;
+
+int main(){
+    long long int n, m, k;
+    cin >> n >> m >> k;
+
+    long long int left = 0, right = 250000000000, guess, num_elements; // guess el numero que podria ser el k number
+
+    while(left != right){
+        guess = (left + right)/2, num_elements = 0;
+        //cout << "----" << "left: " << left << " right: " << right << " guess: " << guess << "---" << endl;
+        //cout << "Probando si '" << guess << "' es el k: " << k << endl;
+        for(int i = 1; i <= n; i++){        // donde i es la fila de la matriz
+            //cout << "En fila " << i << " hay " << min(guess/i, m) << " elementos menores iguales a " << guess << endl;
+            num_elements += min(guess/i, m);
+        }
+        //cout << "Numeros menores iguales a " << guess << ": " << num_elements << " numeros | K: " << k << endl;
+        if (num_elements < k) left = guess + 1;
+        else right = guess;
+    }
+
+    cout << left << endl;
+    return 0;
+}
