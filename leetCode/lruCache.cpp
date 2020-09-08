@@ -12,7 +12,7 @@ public:
     Node() {
         prev = nullptr;
         next = nullptr;
-        key = -1;
+        key = 'a';
         value = -1;
     }
 
@@ -98,96 +98,69 @@ public:
         return dll->head->key;
     }
 
+    void updatePositionNode(Node* node){
+        Node* ptrPrevNode = node->prev;
+        if(node == dll->tail){
+            ptrPrevNode->next = nullptr;
+            dll->tail = ptrPrevNode;
+        }
+        else { // adelante hay nodo
+            ptrPrevNode->next = node->next;
+            node->next->prev = ptrPrevNode;
+        }
+        // Update head
+        node->next = dll->head;
+        node->prev = nullptr;
+        dll->head->prev = node;
+        dll->head = node;
+    }
+
     int get(int key) {
-        std::cout << "** get '" << key <<"' **\n";
+        std::cout << "** getValueFromKey '" << key <<"' **\n";
         if(mapCache.find(key) != mapCache.end()){    // if we have the element requested
             std::cout << "(Key found: Update Cache Structure)\n";
             int valResult = mapCache[key]->value;
-            // Update Node from given key in Cache Structure
+            // Update Cache structure if node is distinct to head
             Node* node = mapCache[key];
-            // Update structure if node is distinct to head
-            // Move Node one position to the left because is recently used
             if(node != dll->head){
-                // if node is located as second node in the dll update Head
-                if(node->prev == dll->head){
-                    std::cout << "(Case 1: node is located as second node)\n";
-                    bool isRequiredUpdateTail = (node == dll->tail);    // ** Statement required to Fix Bug
-                    Node* ptrHead = dll->head;
-                    Node* ptrNextNode = node->next;
-                    dll->head = node;
-                    node->prev = nullptr;
-                    node->next = ptrHead;
-                    ptrHead->prev = node;
-                    ptrHead->next = ptrNextNode;
-                    if(ptrNextNode){        // If statement needed to fix bug (2 nodes)
-                        ptrNextNode->prev = ptrHead;
-                    }
-                    if(isRequiredUpdateTail){
-                        std::cout << "Update Tail Required\n";
-                        dll->tail = ptrHead;
-                    }
-                }
-                else{ // if node is located as third or higher in the dll
-                    std::cout << "(Case 2: node is located as third node or higher)\n";
-                    bool isRequiredUpdateTail = (node == dll->tail);
-                    Node* ptrPrevNode = node->prev;
-                    Node* ptrNextNode = node->next;
-                    Node* ptrPrevPrevNode = node->prev->prev;
-                    ptrPrevPrevNode->next = node;
-                    node->prev = ptrPrevPrevNode;
-                    node->next = ptrPrevNode;
-                    ptrPrevNode->prev = node;
-                    ptrPrevNode->next = ptrNextNode;
-                    if(isRequiredUpdateTail){
-                        std::cout << "Update Tail Required\n";
-                        dll->tail = ptrPrevNode;
-                    }
-                    else {
-                        std::cout << "Update Next - No Tail Required\n";
-                        ptrNextNode->prev = ptrPrevNode;
-                    }
-                }
+                updatePositionNode(node);
             }
-            // Finally return result
             return valResult;
         }
         return -1;
     }
 
     void put(int key, int value) {
-        std::cout << "** put: (" << key << ":" << value << ") ** \n";
+        std::cout << "** insertKeyValuePair: (" << key << ":" << value << ") ** \n";
         if(mapCache.find(key) != mapCache.end()){   // Update existing key
-            std::cout << "Existing Key: Updating value\n";
+            std::cout << "Existing Key: Updating value and position\n";
             Node* node = mapCache[key];
             node->value = value;
+            // Update position
+            if(node != dll->head){
+                updatePositionNode(node);
+            }
         }
         else{ // Add new node
             std::cout << "New Key, Trying to add node (" << key << ":" << value << ")\n";
             Node* node = new Node(key, value);
             if(currentSize == maxSize){
                 std::cout << "Full Capacity: First, We need delete the least recently used\n";
-                if(dll->head == dll->tail){   // case 1: we have capacity = 1 
-                    std::cout << "case 1: we have capacity = 1 \n";
-                    auto itKey = mapCache.find(dll->tail->key);
-                    mapCache.erase(itKey);
-                    delete dll->tail;
-                    dll->head = nullptr;
-                    dll->tail = nullptr;
-                    currentSize--;
-                }
-                else { // case 2: we have capacity >= 2
-                    std::cout << "case 2: we have capacity >= 2 \n";
-                    // Delete tail node to have space and Update Map
-                    Node* copyTailPrev = dll->tail->prev;
-                    // update map
-                    auto itKey = mapCache.find(dll->tail->key);
-                    mapCache.erase(itKey);
-                    // delete least used and free the memory
-                    delete dll->tail;
-                    dll->tail = copyTailPrev;
+                // Delete tail node to have space and Update Map
+                // Delete tail entry from map
+                auto itKey = mapCache.find(dll->tail->key);
+                mapCache.erase(itKey);
+                // delete least used and free the memory
+                Node* ptrTailPrev = dll->tail->prev;
+                delete dll->tail;
+                dll->tail = ptrTailPrev;
+                if(dll->tail){
                     dll->tail->next = nullptr;
-                    currentSize--;   
                 }
+                else {
+                    dll->head = nullptr;
+                }
+                currentSize--;
             }
             std::cout << "Adding new key-value inside node " << key << ":" << value << "\n";
             dll->push_front(node);
